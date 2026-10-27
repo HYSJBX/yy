@@ -37,7 +37,7 @@
   h1{font-size:20px;margin:0;letter-spacing:.5px}
   .tagline{margin:2px 0 0;font-size:12px;color:#7e8da8}
 
-  /* 打赏入口：与“本局/最高”同款卡片样式，放在左侧 */
+  /* 顶部打赏入口：与“本局/最高”同款卡片样式 */
   .tip-stat{
     display:flex;flex-direction:column;align-items:center;gap:2px;
     min-width:78px;padding:8px 14px;border-radius:14px;cursor:pointer;
@@ -159,6 +159,18 @@
   @keyframes popIn{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
   .board .empty{padding:22px 8px;text-align:center;color:#66748f;font-size:13px;background:none;display:block}
 
+  /* 分数榜下方的打赏按钮（恢复原样式） */
+  .tip-btn{
+    width:100%;margin-top:14px;border:0;cursor:pointer;font-family:inherit;
+    font-size:15px;font-weight:700;color:#3a2100;
+    padding:15px;border-radius:18px;
+    background:linear-gradient(135deg,#ffd166,#ff9f43 55%,#ff7b93);
+    box-shadow:0 16px 34px -16px rgba(255,159,67,.85);
+    transition:transform .12s ease,filter .2s;
+  }
+  .tip-btn:hover{filter:brightness(1.05)}
+  .tip-btn:active{transform:scale(.98)}
+
   /* ---------- 打赏弹窗 ---------- */
   .modal-backdrop{
     position:fixed;inset:0;background:rgba(4,7,14,.78);backdrop-filter:blur(6px);
@@ -240,6 +252,8 @@
     /* 16px 可避免 iOS 聚焦时自动放大页面 */
     .name-row input{font-size:16px;padding:9px 10px}
 
+    .tip-btn{margin-top:12px;padding:14px;font-size:14.5px;border-radius:16px}
+
     .modal{padding:20px 18px 18px;border-radius:20px}
     .qr-wrap img{width:160px;height:160px}
   }
@@ -262,7 +276,7 @@
           <p class="tagline">经典复刻 · 分数榜</p>
         </div>
       </div>
-      <!-- 打赏入口：放在左侧，样式与“本局”分数卡片一致 -->
+      <!-- 顶部打赏入口 -->
       <button class="tip-stat" id="tipBtn">
         <span>支持作者</span>
         <b>☕ 打赏</b>
@@ -305,6 +319,9 @@
         </div>
         <ol class="board" id="boardList"></ol>
       </div>
+
+      <!-- 分数榜下方的打赏按钮 -->
+      <button class="tip-btn" id="tipBtn2">☕ 打赏作者</button>
     </aside>
   </div>
 </div>
@@ -777,7 +794,9 @@ function openModal() {
 }
 function closeModal() { tipModal.classList.remove('show'); }
 
+/* 两个打赏入口：顶部卡片 + 分数榜下方按钮 */
 document.getElementById('tipBtn').addEventListener('click', openModal);
+document.getElementById('tipBtn2').addEventListener('click', openModal);
 document.getElementById('closeModal').addEventListener('click', closeModal);
 tipModal.addEventListener('click', (e) => { if (e.target === tipModal) closeModal(); });
 document.addEventListener('keydown', (e) => {
