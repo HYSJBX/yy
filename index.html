@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070a12">
+<title>贪吃蛇 · 排行榜 · 经典</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    color:#e8eefc;
+    background:
+      radial-gradient(900px 520px at 15% -10%, rgba(34,90,120,.55), transparent 60%),
+      radial-gradient(700px 500px at 100% 0%, rgba(90,50,140,.35), transparent 55%),
+      #070a12;
+    display:flex;justify-content:center;
+    padding:22px 14px 60px;
+    min-height:100%;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+  }
+  .app{width:100%;max-width:880px}
+
+  /* ---------- 顶部 ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{
+    width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:24px;
+    background:linear-gradient(145deg,#2ee6a8,#1a9cff);
+    box-shadow:0 10px 28px -8px rgba(46,230,168,.7);
+  }
+  h1{font-size:20px;margin:0;letter-spacing:.5px}
+  .tagline{margin:2px 0 0;font-size:12px;color:#7e8da8}
+  .stats{display:flex;gap:10px}
+  .stat{
+    min-width:84px;padding:8px 14px;border-radius:14px;text-align:center;
+    background:rgba(255,255,255,.05);border:1px solid rgba(120,160,255,.14);
+  }
+  .stat span{display:block;font-size:11px;color:#8394b0;margin-bottom:2px}
+  .stat b{font-size:19px;font-variant-numeric:tabular-nums;color:#5df2b3}
+  .stat.best b{color:#ffd166}
+
+  /* ---------- 布局 ---------- */
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px;align-items:start}
+
+  .game-card{
+    background:rgba(16,24,40,.72);
+    border:1px solid rgba(120,160,255,.14);
+    border-radius:22px;padding:14px;
+    box-shadow:0 26px 60px -30px #000, inset 0 1px 0 rgba(255,255,255,.05);
+    backdrop-filter:blur(10px);
+  }
+  .canvas-wrap{position:relative;display:flex;justify-content:center}
+  canvas{
+    display:block;border-radius:16px;background:#0b1220;touch-action:none;
+    box-shadow:inset 0 0 0 1px rgba(120,160,255,.12), 0 10px 30px -18px #000;
+  }
+
+  .overlay{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(6,10,20,.8);backdrop-filter:blur(6px);border-radius:16px;
+    text-align:center;padding:18px;
+  }
+  .overlay.show{display:flex}
+  .ov-card{animation:fadeUp .28s ease both;max-width:100%}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ov-card h2{margin:0 0 10px;font-size:22px}
+  .ov-score{font-size:15px;color:#9fb0cc;margin-bottom:6px}
+  .ov-score b{font-size:30px;color:#5df2b3;font-variant-numeric:tabular-nums;margin:0 4px}
+  .ov-sub{font-size:13px;color:#8394b0;margin:0 0 16px}
+  .ov-hint{font-size:12.5px;color:#7e8da8;line-height:1.9;margin:0 0 16px}
+
+  .btn{
+    border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:15px;
+    padding:12px 30px;border-radius:14px;color:#04140f;
+    background:linear-gradient(135deg,#5df2b3,#28c6ff);
+    box-shadow:0 12px 26px -12px rgba(45,220,190,.9);
+    transition:transform .12s ease, filter .2s ease;
+  }
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:scale(.97)}
+
+  /* ---------- 方向键 ---------- */
+  .dpad{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(2,52px);
+        gap:8px;justify-content:center;margin-top:14px}
+  .dpad button{
+    border:1px solid rgba(120,160,255,.18);background:rgba(255,255,255,.06);
+    color:#bcd0f0;border-radius:14px;font-size:16px;cursor:pointer;
+    transition:background .15s,transform .1s;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .dpad button:active{background:rgba(93,242,179,.24);transform:scale(.95)}
+  .dpad .up{grid-column:2;grid-row:1}
+  .dpad .left{grid-column:1;grid-row:2}
+  .dpad .down{grid-column:2;grid-row:2}
+  .dpad .right{grid-column:3;grid-row:2}
+  .tips{text-align:center;font-size:12px;color:#66748f;margin:12px 0 2px}
+
+  /* ---------- 侧栏 ---------- */
+  .card{
+    background:rgba(16,24,40,.72);border:1px solid rgba(120,160,255,.14);
+    border-radius:22px;padding:16px;backdrop-filter:blur(10px);
+    box-shadow:0 26px 60px -30px #000;
+  }
+  .card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .card-head h2{font-size:15px;margin:0;letter-spacing:.5px}
+  .link-btn{
+    background:none;border:0;color:#66748f;font-size:12px;cursor:pointer;font-family:inherit;
+    padding:6px 8px;border-radius:8px;transition:color .2s,background .2s;
+  }
+  .link-btn:hover{color:#ff7b93;background:rgba(255,123,147,.1)}
+
+  .name-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  .name-row label{font-size:12px;color:#8394b0;white-space:nowrap}
+  .name-row input{
+    flex:1;min-width:0;background:rgba(255,255,255,.05);border:1px solid rgba(120,160,255,.16);
+    border-radius:10px;padding:8px 10px;color:#e8eefc;font-family:inherit;font-size:13px;outline:none;
+    transition:border-color .2s;
+  }
+  .name-row input:focus{border-color:rgba(93,242,179,.6)}
+
+  /* 排行榜：完整展示前 10 条，不出现滚动条 */
+  .board{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;overflow:visible}
+  .board li{
+    display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;
+    padding:8px 11px;border-radius:12px;background:rgba(255,255,255,.04);
+    font-size:13.5px;
+  }
+  .board li .rank{color:#8fa2c0;font-size:13px;text-align:center;font-variant-numeric:tabular-nums}
+  .board li .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cfdcf3}
+  .board li .sc{font-weight:700;color:#5df2b3;font-variant-numeric:tabular-nums}
+  .board li.top1{background:linear-gradient(90deg,rgba(255,209,102,.18),rgba(255,209,102,.04))}
+  .board li.top1 .sc{color:#ffd166}
+  .board li.top2{background:linear-gradient(90deg,rgba(200,214,235,.14),transparent)}
+  .board li.top3{background:linear-gradient(90deg,rgba(214,150,90,.14),transparent)}
+  .board li.new{animation:popIn .55s cubic-bezier(.2,1.4,.4,1) both;
+                box-shadow:inset 0 0 0 1px rgba(93,242,179,.55)}
+  @keyframes popIn{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+  .board .empty{padding:22px 8px;text-align:center;color:#66748f;font-size:13px;background:none;display:block}
+
+  .tip-btn{
+    width:100%;margin-top:14px;border:0;cursor:pointer;font-family:inherit;
+    font-size:15px;font-weight:700;color:#3a2100;
+    padding:15px;border-radius:18px;
+    background:linear-gradient(135deg,#ffd166,#ff9f43 55%,#ff7b93);
+    box-shadow:0 16px 34px -16px rgba(255,159,67,.85);
+    transition:transform .12s ease,filter .2s;
+  }
+  .tip-btn:hover{filter:brightness(1.05)}
+  .tip-btn:active{transform:scale(.98)}
+
+  /* ---------- 打赏弹窗 ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(4,7,14,.78);backdrop-filter:blur(6px);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:99;
+  }
+  .modal-backdrop.show{display:flex}
+  .modal{
+    width:100%;max-width:360px;background:linear-gradient(180deg,#141d31,#0e1524);
+    border:1px solid rgba(120,160,255,.2);border-radius:24px;padding:24px 22px 22px;
+    text-align:center;position:relative;animation:fadeUp .3s ease both;
+    box-shadow:0 40px 90px -30px #000;
+  }
+  .modal .close{
+    position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;
+    border:0;background:rgba(255,255,255,.07);color:#9fb0cc;font-size:18px;cursor:pointer;
+    line-height:1;transition:background .2s;
+  }
+  .modal .close:hover{background:rgba(255,255,255,.14)}
+  .modal h3{margin:2px 0 6px;font-size:18px}
+  .modal .desc{margin:0 0 16px;font-size:13px;color:#8394b0;line-height:1.6}
+
+  .qr-wrap{
+    display:inline-block;padding:10px;border-radius:16px;background:#fff;
+    box-shadow:0 14px 34px -18px #000;margin-bottom:8px;
+  }
+  /* 使用本地 qr.png 图片作为打赏二维码 */
+  .qr-wrap img{
+    display:block;width:180px;height:180px;object-fit:contain;border-radius:6px;max-width:100%;
+  }
+  .qr-hint{font-size:11.5px;color:#5f6d86;margin:0 0 16px}
+  .thanks{
+    font-size:13.5px;color:#5df2b3;margin-top:10px;min-height:18px;font-weight:600;
+  }
+  .thanks.show{animation:popIn .45s ease both}
+
+  /* ================= 移动端适配 ================= */
+  @media (max-width:780px){
+    body{padding:12px 10px calc(34px + env(safe-area-inset-bottom));}
+
+    .topbar{margin-bottom:12px;gap:10px}
+    .brand{gap:9px}
+    .logo{width:40px;height:40px;border-radius:12px;font-size:20px}
+    h1{font-size:17px}
+    .tagline{font-size:11px}
+    .stats{gap:8px}
+    .stat{min-width:66px;padding:6px 10px;border-radius:12px}
+    .stat span{font-size:10px}
+    .stat b{font-size:17px}
+
+    .layout{grid-template-columns:minmax(0,1fr);gap:14px}
+
+    .game-card{padding:10px;border-radius:18px}
+    canvas{border-radius:12px}
+    .overlay{border-radius:12px;padding:14px}
+    .ov-card h2{font-size:19px}
+    .ov-score{font-size:14px}
+    .ov-score b{font-size:26px}
+    .ov-sub,.ov-hint{font-size:12px}
+    .btn{padding:12px 26px;font-size:15px;width:100%;max-width:220px}
+
+    .dpad{
+      grid-template-columns:repeat(3,62px);
+      grid-template-rows:repeat(2,54px);
+      gap:10px;margin-top:12px;
+    }
+    .dpad button{font-size:18px;border-radius:16px}
+    .tips{font-size:11px;margin-top:9px;line-height:1.6}
+
+    .card{padding:14px;border-radius:18px}
+    .board li{font-size:13px;padding:8px 10px}
+
+    /* 16px 可避免 iOS 聚焦时自动放大页面 */
+    .name-row input{font-size:16px;padding:9px 10px}
+
+    .tip-btn{margin-top:12px;padding:14px;font-size:14.5px;border-radius:16px}
+
+    .modal{padding:20px 18px 18px;border-radius:20px}
+    .qr-wrap img{width:160px;height:160px}
+  }
+  @media (max-width:360px){
+    .dpad{grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,48px);gap:8px}
+    .stat{min-width:60px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">🐍</div>
+      <div>
+        <h1>贪吃蛇</h1>
+        <p class="tagline">经典复刻 · 分数榜 · 打赏</p>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span>本局</span><b id="scoreNow">0</b></div>
+      <div class="stat best"><span>最高</span><b id="scoreBest">0</b></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- 游戏区 -->
+    <section class="game-card">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="game"></canvas>
+        <div class="overlay" id="overlay"></div>
+      </div>
+
+      <div class="dpad">
+        <button class="up"    data-dir="up">▲</button>
+        <button class="left"  data-dir="left">◀</button>
+        <button class="down"  data-dir="down">▼</button>
+        <button class="right" data-dir="right">▶</button>
+      </div>
+      <p class="tips">方向键 / WASD 控制 · 空格暂停 · 手机可滑动屏幕</p>
+    </section>
+
+    <!-- 侧栏 -->
+    <aside class="side">
+      <div class="card">
+        <div class="card-head">
+          <h2>🏆 分数榜 · 前 10</h2>
+          <button class="link-btn" id="clearBtn">清空</button>
+        </div>
+        <div class="name-row">
+          <label>昵称</label>
+          <input id="nameInput" maxlength="10" placeholder="玩家" autocomplete="off">
+        </div>
+        <ol class="board" id="boardList"></ol>
+      </div>
+
+      <button class="tip-btn" id="tipBtn">☕ 打赏作者</button>
+    </aside>
+  </div>
+</div>
+
+<!-- 打赏弹窗 -->
+<div class="modal-backdrop" id="tipModal">
+  <div class="modal">
+    <button class="close" id="closeModal">×</button>
+    <h3>请作者喝杯咖啡 ☕</h3>
+    <p class="desc">如果这个游戏让你开心了几分钟<br>可以扫码打赏支持一下～</p>
+
+    <div class="qr-wrap">
+      <!-- 打赏二维码图片：与网页同目录的 qr.png -->
+      <img src="qr.png" alt="打赏二维码">
+    </div>
+    <p class="qr-hint">← 用微信 / 支付宝扫码打赏 →</p>
+
+    <button class="btn" id="payBtn" style="width:100%;max-width:none">我已完成打赏 ❤️</button>
+    <div class="thanks" id="thanks"></div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ==================== 常量 & 状态 ==================== */
+const COLS = 20, ROWS = 20;
+const LS_SCORES = 'snake.scores.v1';
+const LS_NAME   = 'snake.name.v1';
+const BOARD_MAX = 10;             // 分数榜最多保留 / 显示 10 条
+
+/* 速度参数：数值越小越快（单位 ms/步） */
+const SPEED_START = 300;          // 初始速度：更慢，更从容
+const SPEED_MIN   = 145;          // 速度上限，避免后期过快
+const SPEED_DEC   = 3;            // 每吃一个食物提速的毫秒数
+
+const canvas   = document.getElementById('game');
+const ctx      = canvas.getContext('2d');
+const overlay  = document.getElementById('overlay');
+const boardEl  = document.getElementById('boardList');
+const nameInput= document.getElementById('nameInput');
+const scoreNowEl  = document.getElementById('scoreNow');
+const scoreBestEl = document.getElementById('scoreBest');
+
+let CELL = 22;
+
+let snake = [];
+let dir   = { x: 1, y: 0 };
+let queue = [];               // 转向队列
+let food  = { x: 15, y: 10 };
+let score = 0;
+let running = false, paused = false, over = true;
+let stepMs = SPEED_START, acc = 0, lastT = 0, nowT = 0;
+
+/* ==================== 工具函数 ==================== */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function roundRect(c, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y,     x + w, y + h, r);
+  c.arcTo(x + w, y + h, x,     y + h, r);
+  c.arcTo(x,     y + h, x,     y,     r);
+  c.arcTo(x,     y,     x + w, y,     r);
+  c.closePath();
+}
+
+/* ==================== 画布尺寸（自适应手机） ==================== */
+function sizeCanvas() {
+  const wrap = document.getElementById('canvasWrap');
+  const isMobile = window.innerWidth <= 780;
+
+  const availW = (wrap && wrap.clientWidth) || (isMobile ? 320 : 400);
+  const chromeH = isMobile ? 340 : 300;   // 顶部 + 方向键 + 提示所占高度
+  const availH = Math.max(200, window.innerHeight - chromeH);
+  const maxSide = isMobile ? 420 : 460;
+
+  const target = Math.min(availW, availH, maxSide);
+  const cell = Math.max(11, Math.floor(target / COLS));
+
+  if (cell === CELL && canvas.width === cell * COLS && canvas.height === cell * ROWS) {
+    draw();
+    return;
+  }
+
+  CELL = cell;
+  canvas.width  = CELL * COLS;
+  canvas.height = CELL * ROWS;
+  canvas.style.width  = canvas.width  + 'px';
+  canvas.style.height = canvas.height + 'px';
+  draw();
+}
+
+/* ==================== 游戏逻辑 ==================== */
+function resetState() {
+  snake = [{x:9,y:10},{x:8,y:10},{x:7,y:10}];
+  dir = {x:1,y:0};
+  queue = [];
+  score = 0;
+  stepMs = SPEED_START;      // 每局都从较慢速度开始
+  acc = 0;
+  over = false;
+  paused = false;
+  placeFood();
+  updateHUD();
+}
+
+function placeFood() {
+  const free = [];
+  for (let y = 0; y < ROWS; y++)
+    for (let x = 0; x < COLS; x++)
+      if (!snake.some(s => s.x === x && s.y === y)) free.push({x, y});
+  food = free.length ? free[(Math.random() * free.length) | 0] : {x:0, y:0};
+}
+
+function turn(nx, ny) {
+  if (!running || paused) return;
+  const last = queue.length ? queue[queue.length - 1] : dir;
+  if (last.x === -nx && last.y === -ny) return;   // 禁止 180° 掉头
+  if (last.x === nx  && last.y === ny)  return;   // 重复方向忽略
+  if (queue.length < 2) queue.push({x:nx, y:ny});
+}
+
+function step() {
+  if (queue.length) dir = queue.shift();
+
+  const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+  // 撞墙
+  if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) return endGame();
+
+  const willEat = (head.x === food.x && head.y === food.y);
+  const body = willEat ? snake : snake.slice(0, -1);
+  if (body.some(s => s.x === head.x && s.y === head.y)) return endGame();  // 撞自己
+
+  snake.unshift(head);
+
+  if (willEat) {
+    score += 10;
+    stepMs = Math.max(SPEED_MIN, stepMs - SPEED_DEC);   // 温和提速
+    placeFood();
+    updateHUD();
+  } else {
+    snake.pop();
+  }
+}
+
+function startGame() {
+  resetState();
+  running = true;
+  hideOverlay();
+}
+
+function endGame() {
+  running = false;
+  over = true;
+
+  const rec = {
+    id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: getName(),
+    score: score,
+    date: Date.now()
+  };
+  addScore(rec);
+  renderBoard(rec.id);
+
+  const list = getScores();
+  const rank = list.findIndex(s => s.id === rec.id) + 1;
+  const rankText = rank > 0
+    ? `已记入排行榜 · 当前第 <b style="color:#ffd166">${rank}</b> 名`
+    : `已记入排行榜`;
+
+  showOverlay(`
+    <div class="ov-card">
+      <h2>游戏结束</h2>
+      <div class="ov-score">本局得分 <b>${score}</b> 分</div>
+      <p class="ov-sub">${rankText}</p>
+      <button class="btn" id="againBtn">再来一局</button>
+    </div>
+  `);
+}
+
+function togglePause() {
+  if (!running) return;
+  paused = !paused;
+  if (paused) {
+    showOverlay(`
+      <div class="ov-card">
+        <h2>已暂停</h2>
+        <p class="ov-sub">按空格或点击按钮继续</p>
+        <button class="btn" id="resumeBtn">继续游戏</button>
+      </div>
+    `);
+  } else {
+    hideOverlay();
+  }
+}
+
+/* ==================== 渲染 ==================== */
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  if (!W || !H) return;
+
+  // 背景
+  ctx.fillStyle = '#0b1220';
+  ctx.fillRect(0, 0, W, H);
+
+  // 棋盘格
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      if ((x + y) % 2 === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,.018)';
+        ctx.fillRect(x * CELL, y * CELL, CELL, CELL);
+      }
+    }
+  }
+  // 网格线
+  ctx.strokeStyle = 'rgba(120,160,255,.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < COLS; i++) {
+    ctx.moveTo(i * CELL + .5, 0);
+    ctx.lineTo(i * CELL + .5, H);
+  }
+  for (let i = 1; i < ROWS; i++) {
+    ctx.moveTo(0, i * CELL + .5);
+    ctx.lineTo(W, i * CELL + .5);
+  }
+  ctx.stroke();
+
+  // 食物
+  const pulse = 1 + Math.sin(nowT / 220) * 0.1;
+  const fx = food.x * CELL + CELL / 2;
+  const fy = food.y * CELL + CELL / 2;
+  const fr = CELL * 0.3 * pulse;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,77,109,.9)';
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+  const g = ctx.createRadialGradient(fx - fr * .35, fy - fr * .35, fr * .1, fx, fy, fr);
+  g.addColorStop(0, '#ff9aab');
+  g.addColorStop(1, '#ff3d63');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.restore();
+
+  // 蛇身
+  const n = snake.length;
+  for (let i = n - 1; i >= 0; i--) {
+    const seg = snake[i];
+    const p = n > 1 ? i / (n - 1) : 0;
+    const pad = CELL * 0.09;
+    const x = seg.x * CELL + pad;
+    const y = seg.y * CELL + pad;
+    const w = CELL - pad * 2;
+
+    if (i === 0) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(93,242,179,.75)';
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#7dffbe';
+      roundRect(ctx, x, y, w, w, CELL * 0.32);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      const hue = 152 + p * 34;
+      const light = 58 - p * 22;
+      ctx.fillStyle = `hsl(${hue}, 72%, ${light}%)`;
+      roundRect(ctx, x, y, w, w, CELL * 0.3);
+      ctx.fill();
+    }
+  }
+
+  // 蛇眼
+  if (n) {
+    const h = snake[0];
+    const cx = h.x * CELL + CELL / 2;
+    const cy = h.y * CELL + CELL / 2;
+    const off = CELL * 0.19;
+    let e1, e2;
+    if (dir.x === 1)      { e1 = [cx + off, cy - off]; e2 = [cx + off, cy + off]; }
+    else if (dir.x === -1){ e1 = [cx - off, cy - off]; e2 = [cx - off, cy + off]; }
+    else if (dir.y === 1) { e1 = [cx - off, cy + off]; e2 = [cx + off, cy + off]; }
+    else                  { e1 = [cx - off, cy - off]; e2 = [cx + off, cy - off]; }
+
+    const er = Math.max(1.6, CELL * 0.09);
+    ctx.fillStyle = '#0b1220';
+    [e1, e2].forEach(([ex, ey]) => {
+      ctx.beginPath();
+      ctx.arc(ex, ey, er, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+}
+
+/* ==================== 主循环 ==================== */
+function loop(t) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(t - lastT, 120);
+  lastT = t;
+  nowT = t;
+
+  if (running && !paused) {
+    acc += dt;
+    let guard = 0;
+    while (acc >= stepMs && guard++ < 8) {
+      acc -= stepMs;
+      step();
+      if (!running) break;
+    }
+  }
+  draw();
+}
+
+/* ==================== 覆盖层 ==================== */
+function showOverlay(html) {
+  overlay.innerHTML = html;
+  overlay.classList.add('show');
+}
+function hideOverlay() {
+  overlay.classList.remove('show');
+  overlay.innerHTML = '';
+}
+
+overlay.addEventListener('click', (e) => {
+  const id = e.target && e.target.id;
+  if (id === 'startBtn' || id === 'againBtn') startGame();
+  if (id === 'resumeBtn') togglePause();
+});
+
+/* ==================== 排行榜（最多 10 条，完整显示） ==================== */
+function getScores() {
+  try {
+    const raw = localStorage.getItem(LS_SCORES);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+
+function addScore(rec) {
+  const list = getScores();
+  list.push(rec);
+  list.sort((a, b) => b.score - a.score || a.date - b.date);
+  const trimmed = list.slice(0, BOARD_MAX);      // 只保留前 10 条
+  try { localStorage.setItem(LS_SCORES, JSON.stringify(trimmed)); } catch (e) {}
+  updateHUD();
+}
+
+function renderBoard(highlightId) {
+  const list = getScores().slice(0, BOARD_MAX);   // 只渲染前 10 条
+  if (!list.length) {
+    boardEl.innerHTML = '<li class="empty">还没有记录<br>快来玩一局吧～</li>';
+    return;
+  }
+  boardEl.innerHTML = list.map((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    const cls = [
+      i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '',
+      s.id === highlightId ? 'new' : ''
+    ].filter(Boolean).join(' ');
+    return `<li class="${cls}">
+      <span class="rank">${medal}</span>
+      <span class="name">${esc(s.name)}</span>
+      <span class="sc">${s.score}</span>
+    </li>`;
+  }).join('');
+}
+
+function updateHUD() {
+  scoreNowEl.textContent = score;
+  const list = getScores();
+  const best = list.length ? list[0].score : 0;
+  scoreBestEl.textContent = Math.max(best, score);
+}
+
+/* ==================== 昵称 ==================== */
+function getName() {
+  const v = (nameInput.value || '').trim();
+  return v || '玩家';
+}
+nameInput.value = localStorage.getItem(LS_NAME) || '';
+nameInput.addEventListener('input', () => {
+  try { localStorage.setItem(LS_NAME, nameInput.value.trim()); } catch (e) {}
+});
+
+/* ==================== 清空榜 ==================== */
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (!getScores().length) return;
+  if (confirm('确定清空全部排行榜记录吗？')) {
+    try { localStorage.removeItem(LS_SCORES); } catch (e) {}
+    renderBoard();
+    updateHUD();
+  }
+});
+
+/* ==================== 键盘 ==================== */
+const KEYMAP = {
+  arrowup:    [0, -1], w: [0, -1],
+  arrowdown:  [0,  1], s: [0,  1],
+  arrowleft:  [-1, 0], a: [-1, 0],
+  arrowright: [1,  0], d: [1,  0]
+};
+
+window.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+
+  if (KEYMAP[k]) {
+    e.preventDefault();
+    const [x, y] = KEYMAP[k];
+    if (running && !paused) turn(x, y);
+    else if (!running) startGame();
+    return;
+  }
+  if (k === ' ' || k === 'spacebar') {
+    e.preventDefault();
+    if (running) togglePause();
+    else startGame();
+    return;
+  }
+  if (k === 'enter' && over) startGame();
+});
+
+/* ==================== 方向键按钮 ==================== */
+document.querySelectorAll('.dpad button').forEach(btn => {
+  const handler = (e) => {
+    e.preventDefault();
+    const map = { up: [0,-1], down: [0,1], left: [-1,0], right: [1,0] };
+    const [x, y] = map[btn.dataset.dir];
+    if (running && !paused) turn(x, y);
+    else if (!running) startGame();
+  };
+  btn.addEventListener('pointerdown', handler);
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
+});
+
+/* ==================== 触摸滑动 ==================== */
+let tsx = 0, tsy = 0;
+canvas.addEventListener('touchstart', (e) => {
+  const t = e.touches[0];
+  tsx = t.clientX; tsy = t.clientY;
+}, { passive: true });
+
+canvas.addEventListener('touchend', (e) => {
+  const t = e.changedTouches[0];
+  const dx = t.clientX - tsx;
+  const dy = t.clientY - tsy;
+  if (Math.hypot(dx, dy) < 22) return;
+  if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 1 : -1, 0);
+  else                             turn(0, dy > 0 ? 1 : -1);
+}, { passive: true });
+
+canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+/* ==================== 打赏弹窗（无金额设置，使用 qr.png） ==================== */
+const tipModal = document.getElementById('tipModal');
+const payBtn   = document.getElementById('payBtn');
+const thanksEl = document.getElementById('thanks');
+
+function openModal() {
+  tipModal.classList.add('show');
+  thanksEl.textContent = '';
+  thanksEl.classList.remove('show');
+  payBtn.disabled = false;
+  payBtn.textContent = '我已完成打赏 ❤️';
+}
+function closeModal() { tipModal.classList.remove('show'); }
+
+document.getElementById('tipBtn').addEventListener('click', openModal);
+document.getElementById('closeModal').addEventListener('click', closeModal);
+tipModal.addEventListener('click', (e) => { if (e.target === tipModal) closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && tipModal.classList.contains('show')) closeModal();
+});
+
+payBtn.addEventListener('click', () => {
+  // ⚠️ 演示用：真实场景请在此接入微信/支付宝支付，或跳转到收款链接
+  thanksEl.textContent = '感谢你的支持与鼓励 ❤️';
+  thanksEl.classList.add('show');
+  payBtn.textContent = '感谢支持 🎉';
+  payBtn.disabled = true;
+  setTimeout(() => { payBtn.disabled = false; }, 1400);
+});
+
+/* ==================== 初始化 ==================== */
+function init() {
+  sizeCanvas();
+
+  // 初始静态画面
+  snake = [{x:9,y:10},{x:8,y:10},{x:7,y:10}];
+  placeFood();
+  draw();
+
+  renderBoard();
+  updateHUD();
+
+  showOverlay(`
+    <div class="ov-card">
+      <h2>🐍 贪吃蛇</h2>
+      <p class="ov-hint">
+        方向键 / WASD 控制方向<br>
+        手机滑动屏幕或点下方方向键<br>
+        吃到食物 +10 分，每局结束自动上榜
+      </p>
+      <button class="btn" id="startBtn">开始游戏</button>
+    </div>
+  `);
+
+  lastT = performance.now();
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', sizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(sizeCanvas, 200));
+
+init();
+
+})();
+</script>
+</body>
+</html>
